@@ -12,6 +12,21 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 
   res.json(users);
 });
+const getUserById = asyncHandler(async (req, res, next) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ message: "Id is required" });
+  }
+
+  const user = await User.findById(id).lean().exec();
+
+  if (!user) {
+    return res.status(400).json({ message: "No user found with the given Id" });
+  }
+
+  res.json(user);
+});
 const createNewUser = asyncHandler(async (req, res, next) => {
   const { username, password, role } = req.body;
 
@@ -102,4 +117,10 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   res.json(response);
 });
 
-module.exports = { getAllUsers, createNewUser, updateUser, deleteUser };
+module.exports = {
+  getAllUsers,
+  getUserById,
+  createNewUser,
+  updateUser,
+  deleteUser,
+};
