@@ -13,7 +13,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
   res.json(users);
 });
 const getUserById = asyncHandler(async (req, res, next) => {
-  const { id } = req.body;
+  const { id } = req.params;
 
   if (!id) {
     return res.status(400).json({ message: "Id is required" });
@@ -27,10 +27,28 @@ const getUserById = asyncHandler(async (req, res, next) => {
 
   res.json(user);
 });
+const getUserByRole = asyncHandler(async (req, res, next) => {
+  const { role } = req.params;
+
+  if (!role) {
+    return res.status(400).json({ message: "Role is required" });
+  }
+
+  const user = await User.find({ role: role }).lean().exec();
+
+  if (!user || user.length < 1) {
+    return res
+      .status(400)
+      .json({ message: "No user found with the given role" });
+  }
+
+  res.json(user);
+});
 const createNewUser = asyncHandler(async (req, res, next) => {
   const { username, password, role } = req.body;
 
   if (!username || !password) {
+    console.log(req.body);
     return res.status(400).json({ message: "Fields are required" });
   }
 
@@ -42,7 +60,13 @@ const createNewUser = asyncHandler(async (req, res, next) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const userObject = { username, password: hashedPassword, role };
+  const userObject = {
+    username,
+    password: hashedPassword,
+    role,
+    assignedStudents: role && role === "employee" ? [] : undefined,
+    assignedConsultants: role === undefined || role === "user" ? [] : undefined,
+  };
 
   const newUser = await User.create(userObject);
 
@@ -120,6 +144,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 module.exports = {
   getAllUsers,
   getUserById,
+  getUserByRole,
   createNewUser,
   updateUser,
   deleteUser,

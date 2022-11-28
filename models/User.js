@@ -20,18 +20,21 @@ const userSchema = new Schema({
     type: Boolean,
     default: true,
   },
-  assignedStudents: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+  assignedStudents: {
+    type: [Schema.Types.ObjectId],
+    default: () => {
+      return undefined;
     },
-  ],
-  assignedConsultants: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+    ref: "User",
+  },
+
+  assignedConsultants: {
+    type: [Schema.Types.ObjectId],
+    default: () => {
+      return undefined;
     },
-  ],
+    ref: "User",
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);
