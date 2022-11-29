@@ -1,5 +1,7 @@
-const Task = require("../models/Task");
+const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
+const Task = require("../models/Task");
+const User = require("../models/User");
 
 const getAllTasks = asyncHandler(async (req, res, next) => {
   const tasks = await Task.find().lean();
@@ -39,6 +41,25 @@ const createNewTask = asyncHandler(async (req, res, next) => {
   const taskObject = { users: [empId, stdId], title, description };
 
   const newTask = await Task.create(taskObject);
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  await User.findByIdAndUpdate(
+    empId,
+    {
+      $addToSet: { tasks: newTask },
+    },
+    { session: session }
+  );
+  await User.findByIdAndUpdate(
+    stdId,
+    {
+      $addToSet: { tasks: newTask },
+    },
+    { session: session }
+  );
+  await session.commitTransaction();
 
   if (newTask) {
     res.status(201).json({ message: `Task created for ${stdId} by ${empId}` });

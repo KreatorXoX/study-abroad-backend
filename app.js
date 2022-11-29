@@ -37,6 +37,8 @@ app.use("/api/users", require("./routes/userRoutes"));
 
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
+app.use("/api/tasks", require("./routes/countryRoutes"));
+
 // for unknown routes
 app.all("*", (req, res) => {
   res.status(404);

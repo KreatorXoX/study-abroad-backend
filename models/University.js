@@ -39,6 +39,7 @@ const universitySchema = new Schema({
   },
   country: {
     type: Schema.Types.ObjectId,
+    required: true,
     ref: "Country",
   },
 });

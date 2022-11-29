@@ -4,13 +4,17 @@ const Schema = mongoose.Schema;
 
 const applicationSchema = new Schema(
   {
-    universities: [
-      {
-        type: Schema.Types.ObjectId,
-        required: true,
-        ref: "University",
-      },
-    ],
+    user: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    university: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "University",
+    },
+
     status: {
       type: String,
       enum: ["pending", "declined", "accepted"],

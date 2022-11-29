@@ -12,5 +12,6 @@ router.route("/user/:id").get(userController.getUserById);
 router.route("/:role").get(userController.getUserByRole);
 router.route("/assign").patch(userController.assignUsers);
 router.route("/deassign").patch(userController.deAssignUsers);
+router.route("/test").post(userController.test);
 
 module.exports = router;

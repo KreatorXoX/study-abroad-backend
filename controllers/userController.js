@@ -64,8 +64,6 @@ const createNewUser = asyncHandler(async (req, res, next) => {
     username,
     password: hashedPassword,
     role,
-    assignedStudents: role && role === "employee" ? [] : undefined,
-    assignedConsultants: role === undefined || role === "user" ? [] : undefined,
   };
 
   const newUser = await User.create(userObject);
@@ -154,13 +152,13 @@ const assignUsers = asyncHandler(async (req, res, next) => {
     {
       $addToSet: { assignedConsultants: consultIds },
     },
-    (session = updateSession)
+    { session: updateSession }
   );
 
   await User.updateMany(
     { _id: { $in: consultIds } },
     { $addToSet: { assignedStudents: stdId } },
-    (session = updateSession)
+    { session: updateSession }
   );
 
   await updateSession.commitTransaction();
@@ -181,7 +179,7 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
     {
       $pull: { assignedConsultants: consultId },
     },
-    (session = updateSession)
+    { session: updateSession }
   );
 
   await User.findByIdAndUpdate(
@@ -189,11 +187,18 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
     {
       $pull: { assignedStudents: stdId },
     },
-    (session = updateSession)
+    { session: updateSession }
   );
   await updateSession.commitTransaction();
 
   res.json({ message: "Successful deassignment" });
+});
+
+const test = asyncHandler(async (req, res) => {
+  const { stdid } = req.body;
+  const student = await User.findById(stdid).populate("assignedConsultants");
+
+  res.json(student);
 });
 module.exports = {
   getAllUsers,
@@ -204,4 +209,5 @@ module.exports = {
   deleteUser,
   assignUsers,
   deAssignUsers,
+  test,
 };

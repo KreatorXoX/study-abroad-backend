@@ -27,13 +27,26 @@ const userSchema = new Schema({
     },
     ref: "User",
   },
-
   assignedConsultants: {
     type: [Schema.Types.ObjectId],
     default: () => {
       return undefined;
     },
     ref: "User",
+  },
+  tasks: {
+    type: [Schema.Types.ObjectId],
+    default: () => {
+      return undefined;
+    },
+    ref: "Task",
+  },
+  applications: {
+    type: [Schema.Types.ObjectId],
+    default: () => {
+      return undefined;
+    },
+    ref: "Application",
   },
 });
 
