@@ -10,5 +10,7 @@ router
   .delete(userController.deleteUser);
 router.route("/user/:id").get(userController.getUserById);
 router.route("/:role").get(userController.getUserByRole);
+router.route("/assign").patch(userController.assignUsers);
+router.route("/deassign").patch(userController.deAssignUsers);
 
 module.exports = router;

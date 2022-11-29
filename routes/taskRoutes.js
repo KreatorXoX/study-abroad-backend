@@ -8,4 +8,6 @@ router
   .post(taskController.createNewTask)
   .patch(taskController.updateTask)
   .delete(taskController.deleteTask);
+
+router.route("/:stdId").get(taskController.getTasksByStudent);
 module.exports = router;

@@ -10,6 +10,25 @@ const getAllTasks = asyncHandler(async (req, res, next) => {
 
   res.json(tasks);
 });
+const getTasksByStudent = asyncHandler(async (req, res, next) => {
+  const { stdId } = req.params;
+
+  if (!stdId) {
+    return res.status(400).json({ message: "Student-ID is required" });
+  }
+
+  const tasks = await Task.find({ users: { $in: stdId } })
+    .lean()
+    .exec();
+
+  if (!tasks?.length) {
+    return res
+      .status(400)
+      .json({ message: "No tasks found by the given student-id" });
+  }
+
+  res.json(tasks);
+});
 const createNewTask = asyncHandler(async (req, res, next) => {
   const { empId, title, description, stdId } = req.body;
 
@@ -32,7 +51,11 @@ const createNewTask = asyncHandler(async (req, res, next) => {
 const updateTask = asyncHandler(async (req, res, next) => {
   const { taskId, empCheck, stdCheck } = req.body;
 
-  if (typeof empCheck !== "boolean" || typeof stdCheck !== "boolean") {
+  if (
+    !taskId ||
+    typeof empCheck !== "boolean" ||
+    typeof stdCheck !== "boolean"
+  ) {
     return res.status(400).json({ message: "Check field is required" });
   }
 
@@ -69,4 +92,10 @@ const deleteTask = asyncHandler(async (req, res, next) => {
   res.json({ message: response });
 });
 
-module.exports = { getAllTasks, createNewTask, updateTask, deleteTask };
+module.exports = {
+  getAllTasks,
+  getTasksByStudent,
+  createNewTask,
+  updateTask,
+  deleteTask,
+};

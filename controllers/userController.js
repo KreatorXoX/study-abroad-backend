@@ -1,7 +1,8 @@
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const Task = require("../models/Task");
 const asyncHandler = require("express-async-handler");
-const bcrypt = require("bcrypt");
 
 const getAllUsers = asyncHandler(async (req, res, next) => {
   const users = await User.find().select("-password").lean();
@@ -48,7 +49,6 @@ const createNewUser = asyncHandler(async (req, res, next) => {
   const { username, password, role } = req.body;
 
   if (!username || !password) {
-    console.log(req.body);
     return res.status(400).json({ message: "Fields are required" });
   }
 
@@ -140,7 +140,61 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 
   res.json(response);
 });
+const assignUsers = asyncHandler(async (req, res, next) => {
+  const { stdId, consultIds } = req.body;
 
+  if (!stdId || !consultIds) {
+    return res.status(400).json({ message: "Fields are required" });
+  }
+
+  const updateSession = await mongoose.startSession();
+  updateSession.startTransaction();
+  await User.findByIdAndUpdate(
+    stdId,
+    {
+      $addToSet: { assignedConsultants: consultIds },
+    },
+    (session = updateSession)
+  );
+
+  await User.updateMany(
+    { _id: { $in: consultIds } },
+    { $addToSet: { assignedStudents: stdId } },
+    (session = updateSession)
+  );
+
+  await updateSession.commitTransaction();
+
+  res.json({ message: "Successful assignment" });
+});
+const deAssignUsers = asyncHandler(async (req, res, next) => {
+  const { stdId, consultId } = req.body;
+
+  if (!stdId || !consultId) {
+    return res.status(400).json({ message: "Fields are required zzz" });
+  }
+
+  const updateSession = await mongoose.startSession();
+  updateSession.startTransaction();
+  await User.findByIdAndUpdate(
+    stdId,
+    {
+      $pull: { assignedConsultants: consultId },
+    },
+    (session = updateSession)
+  );
+
+  await User.findByIdAndUpdate(
+    consultId,
+    {
+      $pull: { assignedStudents: stdId },
+    },
+    (session = updateSession)
+  );
+  await updateSession.commitTransaction();
+
+  res.json({ message: "Successful deassignment" });
+});
 module.exports = {
   getAllUsers,
   getUserById,
@@ -148,4 +202,6 @@ module.exports = {
   createNewUser,
   updateUser,
   deleteUser,
+  assignUsers,
+  deAssignUsers,
 };
