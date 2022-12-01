@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const Schema = mongoose.Schema;
 
 const taskSchema = new Schema(
@@ -35,4 +34,15 @@ const taskSchema = new Schema(
   }
 );
 
+taskSchema.post("findOneAndRemove", async function (task) {
+  if (task) {
+    const populatedTask = await task.populate("users");
+    const users = populatedTask.users;
+
+    for (let user of users) {
+      user.tasks.pull(task._id);
+      await user.save();
+    }
+  }
+});
 module.exports = mongoose.model("Task", taskSchema);

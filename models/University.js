@@ -44,4 +44,15 @@ const universitySchema = new Schema({
   },
 });
 
+universitySchema.post("findOneAndRemove", async function (uni) {
+  if (uni) {
+    // need to change the logic like this because mongoose circular dependency error.
+    const uniWithCountry = await uni.populate("country");
+    const country = uniWithCountry.country;
+
+    country.universities.pull(uni._id);
+    await country.save();
+  }
+});
+
 module.exports = mongoose.model("University", universitySchema);

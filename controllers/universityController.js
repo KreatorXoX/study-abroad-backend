@@ -1,10 +1,11 @@
 const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
+const { validationResult } = require("express-validator");
 const Country = require("../models/Country");
 const University = require("../models/University");
 
 const getAllUniversities = asyncHandler(async (req, res, next) => {
-  const universities = await Country.find().lean();
+  const universities = await University.find().lean();
 
   if (!universities?.length) {
     return res.status(400).json({ message: "No university found" });
@@ -14,11 +15,11 @@ const getAllUniversities = asyncHandler(async (req, res, next) => {
 });
 
 const getUniversityById = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  if (!id) {
-    return res.status(400).json({ message: "Id field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Id is required", ...errors });
   }
+  const { id } = req.params;
 
   const university = await University.findById(id).lean().exec();
 
@@ -30,25 +31,23 @@ const getUniversityById = asyncHandler(async (req, res, next) => {
 });
 
 const createNewUniversity = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
   const { name, logo, generalInfo, motto, videoUrl, infoBoxes, countryId } =
     req.body;
-
-  if (
-    !name ||
-    !logo ||
-    generalInfo ||
-    !motto ||
-    !videoUrl ||
-    infoBoxes ||
-    !countryId
-  ) {
-    return res.status(400).json({ message: "Fields are required" });
-  }
 
   const country = await Country.findById(countryId);
 
   if (!country) {
     return res.status(404).json({ message: "Country not found" });
+  }
+
+  const duplicateUniversity = await University.findOne({ name }).lean().exec();
+
+  if (duplicateUniversity) {
+    return res.status(409).json({ message: "Duplicate University" });
   }
 
   const universityObject = {
@@ -58,19 +57,19 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
     motto,
     videoUrl,
     infoBoxes,
-    countryId,
+    country: countryId,
   };
 
   const updateSession = await mongoose.startSession();
   updateSession.startTransaction();
 
-  const newUniversity = await University.create(universityObject, {
+  const newUniversity = await University.create([universityObject], {
     session: updateSession,
   });
 
-  country.universities.push(newUniversity);
+  country.universities.push(newUniversity[0]._id);
 
-  await country.save();
+  await country.save({ session: updateSession });
   await updateSession.commitTransaction();
 
   if (newUniversity) {
@@ -82,40 +81,44 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
   }
 });
 const updateUniversity = asyncHandler(async (req, res, next) => {
-  const { cid, name, flag, videoUrl } = req.body;
-
-  if (!cid) {
-    return res.status(400).json({ message: "Country Id field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+  const { universityId, name, logo, generalInfo, motto, videoUrl, infoBoxes } =
+    req.body;
 
-  const country = await Country.findById(cid).exec();
-
-  if (!country) {
-    return res.status(400).json({ message: "Country not found" });
-  }
-
-  country.name = name ? name : country.name;
-  country.flag = flag ? flag : country.flag;
-  country.videoUrl = videoUrl ? videoUrl : country.videoUrl;
-  await country.save();
-  res.json({ message: "Country updated " });
-});
-const deleteUniversity = asyncHandler(async (req, res, next) => {
-  const { id } = req.body;
-
-  if (!id) {
-    return res.status(400).json({ message: "University ID is required" });
-  }
-
-  const university = await University.findById(id).exec();
+  const university = await University.findById(universityId).exec();
 
   if (!university) {
+    return res.status(400).json({ message: "university not found" });
+  }
+
+  university.name = name;
+  university.logo = logo;
+  university.generalInfo = generalInfo;
+  university.motto = motto;
+  university.videoUrl = videoUrl;
+  university.infoBoxes = infoBoxes;
+  await university.save();
+
+  res.json({ message: "University updated " });
+});
+const deleteUniversity = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Id is required", ...errors });
+  }
+
+  const { id } = req.body;
+
+  const result = await University.findByIdAndRemove(id).exec();
+
+  if (!result) {
     return res.status(400).json({ message: "University not found" });
   }
 
-  const result = await university.deleteOne();
-
-  const response = `University :${result.name} deleted successfully}`;
+  const response = `University : ${result.name} deleted successfully`;
 
   res.json({ message: response });
 });
@@ -124,7 +127,6 @@ module.exports = {
   getAllUniversities,
   createNewUniversity,
   getUniversityById,
-
   updateUniversity,
   deleteUniversity,
 };

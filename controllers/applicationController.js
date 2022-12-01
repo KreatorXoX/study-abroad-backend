@@ -23,7 +23,9 @@ const getApplicationByStudent = asyncHandler(async (req, res, next) => {
   const application = await Application.findById(id).lean().exec();
 
   if (!application) {
-    return res.status(404).json({ message: "Application not found" });
+    return res
+      .status(404)
+      .json({ message: "Application not found for the given id" });
   }
 
   res.json(application);
@@ -41,7 +43,7 @@ const createNewApplication = asyncHandler(async (req, res, next) => {
 
   const applicationObject = { user: stdId, universities: universityId };
 
-  const newApplication = await Application.create(applicationObject, {
+  const newApplication = await Application.create([applicationObject], {
     session: session,
   });
 

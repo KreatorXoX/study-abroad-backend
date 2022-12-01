@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
+const { validationResult } = require("express-validator");
 const Task = require("../models/Task");
 const User = require("../models/User");
 
@@ -13,11 +14,11 @@ const getAllTasks = asyncHandler(async (req, res, next) => {
   res.json(tasks);
 });
 const getTasksByStudent = asyncHandler(async (req, res, next) => {
-  const { stdId } = req.params;
-
-  if (!stdId) {
-    return res.status(400).json({ message: "Student-ID is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Id is required", ...errors });
   }
+  const { stdId } = req.params;
 
   const tasks = await Task.find({ users: { $in: stdId } })
     .lean()
@@ -32,33 +33,44 @@ const getTasksByStudent = asyncHandler(async (req, res, next) => {
   res.json(tasks);
 });
 const createNewTask = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
   const { empId, title, description, stdId } = req.body;
 
-  if (!empId || !stdId || !title || !description) {
-    return res.status(400).json({ message: "Fields are required" });
-  }
-
   const taskObject = { users: [empId, stdId], title, description };
-
-  const newTask = await Task.create(taskObject);
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  await User.findByIdAndUpdate(
+  const newTask = await Task.create([taskObject], { session: session });
+
+  const emp = await User.findByIdAndUpdate(
     empId,
     {
-      $addToSet: { tasks: newTask },
+      $push: { tasks: newTask },
     },
     { session: session }
   );
-  await User.findByIdAndUpdate(
+
+  if (!emp) {
+    return res
+      .status(404)
+      .json({ message: "No employee found with the given id" });
+  }
+  const std = await User.findByIdAndUpdate(
     stdId,
     {
-      $addToSet: { tasks: newTask },
+      $push: { tasks: newTask },
     },
     { session: session }
   );
+  if (!std) {
+    return res
+      .status(404)
+      .json({ message: "No student found with the given id" });
+  }
   await session.commitTransaction();
 
   if (newTask) {
@@ -70,15 +82,11 @@ const createNewTask = asyncHandler(async (req, res, next) => {
   }
 });
 const updateTask = asyncHandler(async (req, res, next) => {
-  const { taskId, empCheck, stdCheck } = req.body;
-
-  if (
-    !taskId ||
-    typeof empCheck !== "boolean" ||
-    typeof stdCheck !== "boolean"
-  ) {
-    return res.status(400).json({ message: "Check field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+  const { taskId, empCheck, stdCheck } = req.body;
 
   const task = await Task.findById(taskId).exec();
 
@@ -94,19 +102,17 @@ const updateTask = asyncHandler(async (req, res, next) => {
   res.json({ message: `${task.title} with id ${taskId} is updated` });
 });
 const deleteTask = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Id is required", ...errors });
+  }
   const { id } = req.body;
 
-  if (!id) {
-    return res.status(400).json({ message: "Task ID is required" });
-  }
+  const result = await Task.findByIdAndRemove(id).exec();
 
-  const task = await Task.findById(id).exec();
-
-  if (!task) {
+  if (!result) {
     return res.status(400).json({ message: "Task not found" });
   }
-
-  const result = await task.deleteOne();
 
   const response = `Task:${result.title} with ID:${result._id} deleted successfully}`;
 

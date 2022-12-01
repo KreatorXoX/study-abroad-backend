@@ -1,5 +1,6 @@
 const Country = require("../models/Country");
 const asyncHandler = require("express-async-handler");
+const { validationResult } = require("express-validator");
 
 const getAllCountries = asyncHandler(async (req, res, next) => {
   const countries = await Country.find().lean();
@@ -12,11 +13,11 @@ const getAllCountries = asyncHandler(async (req, res, next) => {
 });
 
 const getCountryById = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  if (!id) {
-    return res.status(400).json({ message: "Id field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+  const { id } = req.params;
 
   const country = await Country.findById(id).lean().exec();
 
@@ -28,12 +29,15 @@ const getCountryById = asyncHandler(async (req, res, next) => {
 });
 
 const createNewCountry = asyncHandler(async (req, res, next) => {
-  const { name, flag, videoUrl } = req.body;
-
-  if (!name || !flag || !videoUrl) {
-    return res.status(400).json({ message: "Fields are required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
-
+  const { name, flag, videoUrl } = req.body;
+  const duplicateCountry = await Country.findOne({ name });
+  if (duplicateCountry) {
+    return res.status(400).json({ message: "Duplicated Country" });
+  }
   const countryObject = { name, flag, videoUrl };
 
   const newCountry = await Country.create(countryObject);
@@ -47,11 +51,11 @@ const createNewCountry = asyncHandler(async (req, res, next) => {
   }
 });
 const updateCountry = asyncHandler(async (req, res, next) => {
-  const { cid, name, flag, videoUrl } = req.body;
-
-  if (!cid) {
-    return res.status(400).json({ message: "Country Id field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+  const { cid, name, flag, videoUrl } = req.body;
 
   const country = await Country.findById(cid).exec();
 
@@ -66,21 +70,19 @@ const updateCountry = asyncHandler(async (req, res, next) => {
   res.json({ message: "Country updated " });
 });
 const deleteCountry = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
   const { id } = req.body;
 
-  if (!id) {
-    return res.status(400).json({ message: "Country ID is required" });
-  }
+  const result = await Country.findByIdAndRemove(id).exec();
 
-  const country = await Country.findById(id).exec();
-
-  if (!country) {
+  if (!result) {
     return res.status(400).json({ message: "Country not found" });
   }
 
-  const result = await country.deleteOne();
-
-  const response = `Country :${result.name} deleted successfully}`;
+  const response = `Country : ${result.name} deleted successfully}`;
 
   res.json({ message: response });
 });

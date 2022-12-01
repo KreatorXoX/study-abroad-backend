@@ -35,9 +35,13 @@ app.use("/", require("./routes/root"));
 
 app.use("/api/users", require("./routes/userRoutes"));
 
+app.use("/api/applications", require("./routes/applicationRoutes"));
+
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
-app.use("/api/tasks", require("./routes/countryRoutes"));
+app.use("/api/countries", require("./routes/countryRoutes"));
+
+app.use("/api/universities", require("./routes/universityRoutes"));
 
 // for unknown routes
 app.all("*", (req, res) => {
