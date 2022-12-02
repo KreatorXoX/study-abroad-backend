@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const User = require("./User");
 const Schema = mongoose.Schema;
 
 const applicationSchema = new Schema(
@@ -25,5 +25,17 @@ const applicationSchema = new Schema(
     timestamps: true,
   }
 );
+
+applicationSchema.post("findOneAndRemove", async function (application) {
+  if (application) {
+    const populatedApplication = await application.populate("user");
+    const user = populatedApplication.user;
+
+    if (user.applications) {
+      user.applications.pull(application);
+      await user.save();
+    }
+  }
+});
 
 module.exports = mongoose.model("Application", applicationSchema);

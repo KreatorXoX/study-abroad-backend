@@ -52,7 +52,7 @@ const createNewTask = asyncHandler(async (req, res, next) => {
       $push: { tasks: newTask },
     },
     { session: session }
-  );
+  ).exec();
 
   if (!emp) {
     return res
@@ -65,7 +65,7 @@ const createNewTask = asyncHandler(async (req, res, next) => {
       $push: { tasks: newTask },
     },
     { session: session }
-  );
+  ).exec();
   if (!std) {
     return res
       .status(404)
@@ -114,7 +114,7 @@ const deleteTask = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Task not found" });
   }
 
-  const response = `Task:${result.title} with ID:${result._id} deleted successfully}`;
+  const response = `Task:${result.title} with ID:${result._id} deleted successfully`;
 
   res.json({ message: response });
 });

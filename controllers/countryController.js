@@ -34,7 +34,7 @@ const createNewCountry = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
   const { name, flag, videoUrl } = req.body;
-  const duplicateCountry = await Country.findOne({ name });
+  const duplicateCountry = await Country.findOne({ name }).lean().exec();
   if (duplicateCountry) {
     return res.status(400).json({ message: "Duplicated Country" });
   }
@@ -82,7 +82,7 @@ const deleteCountry = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Country not found" });
   }
 
-  const response = `Country : ${result.name} deleted successfully}`;
+  const response = `Country : ${result.name} deleted successfully`;
 
   res.json({ message: response });
 });

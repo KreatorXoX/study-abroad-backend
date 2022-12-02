@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
+const asyncHandler = require("express-async-handler");
+const { validationResult } = require("express-validator");
+
 const Application = require("../models/Application");
 const User = require("../models/User");
-const asyncHandler = require("express-async-handler");
+const University = require("../models/University");
 
 const getAllApplications = asyncHandler(async (req, res, next) => {
   const applications = await Application.find().lean();
@@ -14,11 +17,12 @@ const getAllApplications = asyncHandler(async (req, res, next) => {
 });
 
 const getApplicationByStudent = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  if (!id) {
-    return res.status(400).json({ message: "Id field is required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+
+  const { id } = req.params;
 
   const application = await Application.findById(id).lean().exec();
 
@@ -32,27 +36,45 @@ const getApplicationByStudent = asyncHandler(async (req, res, next) => {
 });
 
 const createNewApplication = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
   const { stdId, universityId } = req.body;
 
-  if (!stdId || !universityId) {
-    return res.status(400).json({ message: "Fields are required" });
+  const duplicateApplication = await Application.findOne({
+    $and: [{ user: stdId }, { university: universityId }],
+  })
+    .lean()
+    .exec();
+
+  if (duplicateApplication) {
+    return res.status(400).json({ message: "Duplicate Application" });
+  }
+
+  const uni = await University.findById(universityId).lean().exec();
+
+  if (!uni) {
+    return res.status(400).json({ message: "University not found" });
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const applicationObject = { user: stdId, universities: universityId };
+  const applicationObject = { user: stdId, university: universityId };
 
   const newApplication = await Application.create([applicationObject], {
     session: session,
   });
 
-  await User.findByIdAndUpdate(
+  const std = await User.findByIdAndUpdate(
     stdId,
     { $push: { applications: newApplication } },
     { session: session }
-  );
-
+  ).exec();
+  if (!std) {
+    return res.status(400).json({ message: "User not found" });
+  }
   await session.commitTransaction();
 
   if (newApplication) {
@@ -64,11 +86,11 @@ const createNewApplication = asyncHandler(async (req, res, next) => {
   }
 });
 const updateApplication = asyncHandler(async (req, res, next) => {
-  const { appId, status } = req.body;
-
-  if (!appId || !status) {
-    return res.status(400).json({ message: "Fields are required" });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
+  const { appId, status } = req.body;
 
   const application = await Application.findById(appId).exec();
 
@@ -82,21 +104,21 @@ const updateApplication = asyncHandler(async (req, res, next) => {
   res.json({ message: "Application updated " });
 });
 const deleteApplication = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
   const { id } = req.body;
 
-  if (!id) {
-    return res.status(400).json({ message: "Application ID is required" });
+  const result = await Application.findByIdAndRemove(id).exec();
+
+  if (!result) {
+    return res
+      .status(404)
+      .json({ message: "No Application found with the given id" });
   }
 
-  const application = await Application.findById(id).exec();
-
-  if (!application) {
-    return res.status(400).json({ message: "Application not found" });
-  }
-
-  const result = await application.deleteOne();
-
-  const response = `Application :${result.name} deleted successfully}`;
+  const response = `Application :${result.name} deleted successfully`;
 
   res.json({ message: response });
 });

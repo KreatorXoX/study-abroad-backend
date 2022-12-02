@@ -38,7 +38,7 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
   const { name, logo, generalInfo, motto, videoUrl, infoBoxes, countryId } =
     req.body;
 
-  const country = await Country.findById(countryId);
+  const country = await Country.findById(countryId).exec();
 
   if (!country) {
     return res.status(404).json({ message: "Country not found" });

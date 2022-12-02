@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const Application = require("./Application");
+const User = require("./User");
 
 const Schema = mongoose.Schema;
 
@@ -48,8 +50,15 @@ universitySchema.post("findOneAndRemove", async function (uni) {
   if (uni) {
     // need to change the logic like this because mongoose circular dependency error.
     const uniWithCountry = await uni.populate("country");
+    const applications = await Application.find({ university: uni._id });
+    const userIds = applications.map((app) => app.user);
+    const users = await User.find({ _id: { $in: userIds } });
+    for (let user of users) {
+      user.applications.pull(applications.map((app) => app._id));
+      await user.save();
+    }
+    await Application.deleteMany({ university: uni._id });
     const country = uniWithCountry.country;
-
     country.universities.pull(uni._id);
     await country.save();
   }

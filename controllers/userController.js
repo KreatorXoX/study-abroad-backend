@@ -155,7 +155,7 @@ const assignUsers = asyncHandler(async (req, res, next) => {
       $addToSet: { assignedConsultants: consultIds },
     },
     { session: updateSession }
-  );
+  ).exec();
 
   if (!std) {
     return res
@@ -167,7 +167,7 @@ const assignUsers = asyncHandler(async (req, res, next) => {
     { _id: { $in: consultIds } },
     { $addToSet: { assignedStudents: stdId } },
     { session: updateSession }
-  );
+  ).exec();
 
   if (!emps || emps.matchedCount !== consultIds.length) {
     return res.status(400).json({ message: "Failed to match Consult Ids" });
@@ -192,7 +192,7 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
       $pull: { assignedConsultants: consultId },
     },
     { session: updateSession }
-  );
+  ).exec();
 
   await User.findByIdAndUpdate(
     consultId,
@@ -200,7 +200,7 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
       $pull: { assignedStudents: stdId },
     },
     { session: updateSession }
-  );
+  ).exec();
   await updateSession.commitTransaction();
 
   res.json({ message: "Successful deassignment" });
