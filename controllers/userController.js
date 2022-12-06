@@ -30,25 +30,25 @@ const getUserById = asyncHandler(async (req, res, next) => {
 
   res.json(user);
 });
-const getUserByRole = asyncHandler(async (req, res, next) => {
+const getUsersByRole = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Invalid Role", ...errors });
   }
   const { role } = req.params;
 
-  const user = await User.find({ role: role })
+  const users = await User.find({ role: role })
     .select("-password")
     .lean()
     .exec();
 
-  if (!user?.length) {
+  if (!users?.length) {
     return res
       .status(400)
       .json({ message: "No user found with the given role" });
   }
 
-  res.json(user);
+  res.json(users);
 });
 const createNewUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -209,7 +209,7 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
 module.exports = {
   getAllUsers,
   getUserById,
-  getUserByRole,
+  getUsersByRole,
   createNewUser,
   updateUser,
   deleteUser,

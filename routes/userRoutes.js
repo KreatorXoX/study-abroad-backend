@@ -27,7 +27,7 @@ router
   .route("/role/:role")
   .get(
     [check("role").isIn(["employee", "user", "admin"])],
-    userController.getUserByRole
+    userController.getUsersByRole
   );
 router
   .route("/assign")
