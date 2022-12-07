@@ -45,7 +45,7 @@ const getUsersByRole = asyncHandler(async (req, res, next) => {
   if (!users?.length) {
     return res
       .status(400)
-      .json({ message: "No user found with the given role" });
+      .json({ message: "No users found with the given role", role });
   }
 
   res.json(users);
@@ -55,8 +55,8 @@ const createNewUser = asyncHandler(async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
-  const { username, password, role } = req.body;
-  const duplicateUser = await User.findOne({ username }).lean().exec(); // documentation says if you pass params you should add exec for returning promises
+  const { username, email, password, role, image = "" } = req.body;
+  const duplicateUser = await User.findOne({ email }).lean().exec(); // documentation says if you pass params you should add exec for returning promises
 
   if (duplicateUser) {
     return res.status(409).json({ message: "Duplicate Username" });
@@ -66,8 +66,10 @@ const createNewUser = asyncHandler(async (req, res, next) => {
 
   const userObject = {
     username,
+    email,
     password: hashedPassword,
     role,
+    image,
   };
 
   const newUser = await User.create(userObject);
@@ -87,7 +89,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
 
-  const { id, username, active, password } = req.body;
+  const { id, email, active, password } = req.body;
 
   const user = await User.findById(id).exec();
 
@@ -95,16 +97,14 @@ const updateUser = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "User not found" });
   }
 
-  const duplicateUser = await User.findOne({ username: username })
-    .lean()
-    .exec();
+  const duplicateUser = await User.findOne({ email: email }).lean().exec();
 
-  // if the user tries to update their username to an existing username
+  // if the user tries to update their email to an existing email
   if (duplicateUser && duplicateUser._id.toString() !== id) {
-    return res.status(409).json({ message: "Username already in use" });
+    return res.status(409).json({ message: "Email already in use" });
   }
 
-  user.username = username;
+  user.email = email;
   user.active = active;
 
   if (password) {

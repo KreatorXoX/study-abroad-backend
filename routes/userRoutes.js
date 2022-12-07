@@ -10,14 +10,17 @@ router
   .post(
     [
       check("username").isString().isLength({ min: 3 }),
-      check("password").isString().isLength({ min: 6 }),
+      check("email").isEmail(),
+      check("password", "password min length is 6")
+        .isString()
+        .isLength({ min: 6 }),
     ],
     userController.createNewUser
   )
   .patch(
     [
       check("id").isMongoId(),
-      check("username").isString().isLength({ min: 3 }),
+      check("email").isEmail(),
       check("active").isBoolean(),
     ],
     userController.updateUser
