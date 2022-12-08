@@ -113,7 +113,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
   }
   await user.save();
 
-  res.json({ message: `${user.username} is updated` });
+  res.json({ message: `${user.username} is updated`, id: user._id });
 });
 const deleteUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -122,7 +122,6 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   }
 
   const { id } = req.body;
-
   const task = await Task.findOne({ users: { $in: id } })
     .lean()
     .exec();
