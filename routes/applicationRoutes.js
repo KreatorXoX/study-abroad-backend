@@ -19,10 +19,13 @@ router
   )
   .delete(applicationController.deleteApplication);
 router
-  .route("/:id")
+  .route("/std/:id")
   .get(
     [check("id").isMongoId()],
-    applicationController.getApplicationByStudent
+    applicationController.getApplicationsByStudent
   );
+router
+  .route("/:id")
+  .get([check("id").isMongoId()], applicationController.getApplicationById);
 
 module.exports = router;

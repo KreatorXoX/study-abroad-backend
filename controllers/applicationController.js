@@ -16,7 +16,23 @@ const getAllApplications = asyncHandler(async (req, res, next) => {
   res.json(applications);
 });
 
-const getApplicationByStudent = asyncHandler(async (req, res, next) => {
+const getApplicationsByStudent = asyncHandler(async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
+
+  const { id } = req.params;
+
+  const user = await User.findById(id).populate("applications").lean().exec();
+
+  if (!user?.applications) {
+    return res.status(404).json({ message: "No App or No User" });
+  }
+
+  res.json(user.applications);
+});
+const getApplicationById = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
@@ -78,7 +94,9 @@ const createNewApplication = asyncHandler(async (req, res, next) => {
   await session.commitTransaction();
 
   if (newApplication) {
-    res.status(201).json({ message: "Application created successfully" });
+    res
+      .status(201)
+      .json({ message: "Application created successfully", stdId: stdId });
   } else {
     res.status(400).json({
       message: "Failed to create application",
@@ -101,7 +119,11 @@ const updateApplication = asyncHandler(async (req, res, next) => {
   application.status = status;
 
   await application.save();
-  res.json({ message: "Application updated " });
+  res.json({
+    message: "Application updated",
+    stdId: application.user,
+    id: appId,
+  });
 });
 const deleteApplication = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -120,13 +142,14 @@ const deleteApplication = asyncHandler(async (req, res, next) => {
 
   const response = `Application :${result.name} deleted successfully`;
 
-  res.json({ message: response });
+  res.json({ message: response, stdId: result.user });
 });
 
 module.exports = {
   getAllApplications,
+  getApplicationById,
+  getApplicationsByStudent,
   createNewApplication,
-  getApplicationByStudent,
   updateApplication,
   deleteApplication,
 };
