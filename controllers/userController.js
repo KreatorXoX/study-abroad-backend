@@ -89,7 +89,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
 
-  const { id, email, active, password } = req.body;
+  const { id, email, active, password, username } = req.body;
 
   const user = await User.findById(id).exec();
 
@@ -104,6 +104,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
     return res.status(409).json({ message: "Email already in use" });
   }
 
+  user.username = username;
   user.email = email;
   user.active = active;
 
