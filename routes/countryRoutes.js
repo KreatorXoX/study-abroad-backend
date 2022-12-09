@@ -17,9 +17,9 @@ router
   .patch(
     [
       check("cid").isMongoId(),
-      check("name").isString().not().isEmpty(),
-      check("flag").isURL(),
-      check("videoUrl").isURL(),
+      // check("name").isString().not().isEmpty(),
+      // check("flag").isURL(),
+      // check("videoUrl").isURL(),
     ],
     countryController.updateCountry
   )

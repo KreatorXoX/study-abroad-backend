@@ -19,7 +19,10 @@ const getCountryById = asyncHandler(async (req, res, next) => {
   }
   const { id } = req.params;
 
-  const country = await Country.findById(id).lean().exec();
+  const country = await Country.findById(id)
+    .populate("universities")
+    .lean()
+    .exec();
 
   if (!country) {
     return res.status(404).json({ message: "Country not found" });

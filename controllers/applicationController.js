@@ -24,8 +24,19 @@ const getApplicationsByStudent = asyncHandler(async (req, res, next) => {
 
   const { id } = req.params;
 
-  const user = await User.findById(id).populate("applications").lean().exec();
+  const user = await User.findById(id)
+    .populate({
+      path: "applications",
+      populate: {
+        path: "university",
+        model: "University",
+        select: ["logo", "name"],
+      },
+    })
+    .lean()
+    .exec();
 
+  console.log(user.applications);
   if (!user?.applications) {
     return res.status(404).json({ message: "No App or No User" });
   }
@@ -139,10 +150,9 @@ const deleteApplication = asyncHandler(async (req, res, next) => {
       .status(404)
       .json({ message: "No Application found with the given id" });
   }
+  const response = `Application :${result._id} deleted successfully`;
 
-  const response = `Application :${result.name} deleted successfully`;
-
-  res.json({ message: response, stdId: result.user });
+  res.json({ message: response, stdId: result.user._id });
 });
 
 module.exports = {
