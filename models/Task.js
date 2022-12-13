@@ -16,7 +16,7 @@ const taskSchema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
     },
     completed: {
       byStudent: {
@@ -36,6 +36,7 @@ const taskSchema = new Schema(
 
 taskSchema.post("findOneAndRemove", async function (task) {
   if (task) {
+    console.log("post delete task");
     const populatedTask = await task.populate("users");
     const users = populatedTask.users;
 

@@ -36,9 +36,8 @@ const getApplicationsByStudent = asyncHandler(async (req, res, next) => {
     .lean()
     .exec();
 
-  console.log(user.applications);
   if (!user?.applications) {
-    return res.status(404).json({ message: "No App or No User" });
+    return res.status(404).json({ message: "No Applications Found" });
   }
 
   res.json(user.applications);

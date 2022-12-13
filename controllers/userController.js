@@ -22,7 +22,18 @@ const getUserById = asyncHandler(async (req, res, next) => {
   }
   const { id } = req.params;
 
-  const user = await User.findById(id).select("-password").lean().exec();
+  const user = await User.findById(id)
+    .select("-password")
+    .populate({
+      path: "assignedConsultants",
+      select: ["username"],
+    })
+    .populate({
+      path: "assignedStudents",
+      select: ["username", "image"],
+    })
+    .lean()
+    .exec();
 
   if (!user) {
     return res.status(400).json({ message: "No user found with the given Id" });
@@ -122,7 +133,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
 
-  const { id } = req.body;
+  const { id, role } = req.body;
   const task = await Task.findOne({ users: { $in: id } })
     .lean()
     .exec();
@@ -137,7 +148,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   }
   const response = `Username:${result.username} with ID:${result._id} deleted successfully`;
 
-  res.json(response);
+  res.json({ response, role: role, id: id });
 });
 const assignUsers = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -146,6 +157,8 @@ const assignUsers = asyncHandler(async (req, res, next) => {
   }
 
   const { stdId, consultIds } = req.body;
+
+  console.log(stdId, consultIds);
 
   const updateSession = await mongoose.startSession();
   updateSession.startTransaction();
@@ -175,7 +188,7 @@ const assignUsers = asyncHandler(async (req, res, next) => {
 
   await updateSession.commitTransaction();
 
-  res.json({ message: "Successful assignment" });
+  res.json({ message: "Successful assignment", stdId: stdId });
 });
 const deAssignUsers = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
@@ -203,7 +216,7 @@ const deAssignUsers = asyncHandler(async (req, res, next) => {
   ).exec();
   await updateSession.commitTransaction();
 
-  res.json({ message: "Successful deassignment" });
+  res.json({ message: "Successful deassignment", stdId: stdId });
 });
 
 module.exports = {

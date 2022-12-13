@@ -12,18 +12,10 @@ router
       check("empId").isMongoId(),
       check("stdId").isMongoId(),
       check("title").notEmpty(),
-      check("description").notEmpty(),
     ],
     taskController.createNewTask
   )
-  .patch(
-    [
-      check("taskId").isMongoId(),
-      check("empCheck").isBoolean(),
-      check("stdCheck").isBoolean(),
-    ],
-    taskController.updateTask
-  )
+  .patch([check("taskId").isMongoId()], taskController.updateTask)
   .delete([check("id").isMongoId()], taskController.deleteTask);
 
 router

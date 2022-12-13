@@ -37,7 +37,7 @@ const createNewTask = asyncHandler(async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
-  const { empId, title, description, stdId } = req.body;
+  const { empId, title, description = "Not Specified", stdId } = req.body;
 
   const taskObject = { users: [empId, stdId], title, description };
 
@@ -94,8 +94,8 @@ const updateTask = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Task not found" });
   }
 
-  task.completed.byStudent = stdCheck;
-  task.completed.byEmployee = empCheck;
+  task.completed.byStudent = stdCheck ? stdCheck : task.completed.byStudent;
+  task.completed.byEmployee = empCheck ? empCheck : task.completed.byEmployee;
 
   await task.save();
 
