@@ -2,6 +2,9 @@ const express = require("express");
 const { check } = require("express-validator");
 const applicationController = require("../controllers/applicationController");
 const router = express.Router();
+const verifyAuth = require("../middleware/verifyAuth");
+
+router.use(verifyAuth);
 
 router
   .route("/")

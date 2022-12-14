@@ -1,9 +1,10 @@
 const express = require("express");
 const { check } = require("express-validator");
 const taskController = require("../controllers/taskController");
-
 const router = express.Router();
+const verifyAuth = require("../middleware/verifyAuth");
 
+router.use(verifyAuth);
 router
   .route("/")
   .get(taskController.getAllTasks)

@@ -70,7 +70,7 @@ const createNewUser = asyncHandler(async (req, res, next) => {
   const duplicateUser = await User.findOne({ email }).lean().exec(); // documentation says if you pass params you should add exec for returning promises
 
   if (duplicateUser) {
-    return res.status(409).json({ message: "Duplicate Username" });
+    return res.status(409).json({ message: "Duplicate User" });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -108,7 +108,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "User not found" });
   }
 
-  const duplicateUser = await User.findOne({ email: email }).lean().exec();
+  const duplicateUser = await User.findOne({ email }).lean().exec();
 
   // if the user tries to update their email to an existing email
   if (duplicateUser && duplicateUser._id.toString() !== id) {
