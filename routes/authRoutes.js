@@ -5,7 +5,18 @@ const authController = require("../controllers/authController");
 const loginLimiter = require("../middleware/loginLimiter");
 
 router
-  .route("/")
+  .route("/register")
+  .post(
+    [
+      check("email").isEmail(),
+      check("username").not().isEmpty(),
+      check("password").isLength({ min: 6 }),
+    ],
+    authController.register
+  );
+
+router
+  .route("/login")
   .post(
     loginLimiter,
     [check("email").isEmail(), check("password").isLength({ min: 6 })],

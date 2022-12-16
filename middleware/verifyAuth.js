@@ -11,6 +11,7 @@ const verifyAuth = (req, res, next) => {
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) return res.status(403).json({ message: "Forbbiden " });
+    req._id = decoded.UserInfo._id;
     req.email = decoded.UserInfo.email;
     req.user = decoded.UserInfo.username;
     req.role = decoded.UserInfo.role;

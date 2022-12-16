@@ -4,6 +4,62 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const { validationResult } = require("express-validator");
 
+const register = asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Fields are required", ...errors });
+  }
+  const { username, email, password, role = "user", image = "" } = req.body;
+
+  const duplicateUser = await User.findOne({ email }).lean().exec();
+
+  if (duplicateUser) {
+    return res
+      .status(401)
+      .json({ message: "User already exists with that email" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await User.create({
+    username,
+    email,
+    password: hashedPassword,
+    role,
+    image,
+    tasks: [],
+    applications: [],
+    assignedConsultants: [],
+  });
+
+  const accessToken = jwt.sign(
+    {
+      UserInfo: {
+        _id: newUser._id,
+        email: newUser.email,
+        username: newUser.username,
+        role: newUser.role,
+      },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "30m" }
+  );
+  const refreshToken = jwt.sign(
+    { _id: newUser._id },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("jwtToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.json({ accessToken });
+});
+
 const login = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -26,18 +82,19 @@ const login = asyncHandler(async (req, res) => {
   const accessToken = jwt.sign(
     {
       UserInfo: {
+        _id: foundUser._id,
         email: foundUser.email,
         username: foundUser.username,
         role: foundUser.role,
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1m" }
+    { expiresIn: "30m" }
   );
   const refreshToken = jwt.sign(
-    { email: foundUser.email },
+    { _id: foundUser._id },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: "7d" }
   );
 
   res.cookie("jwtToken", refreshToken, {
@@ -64,20 +121,21 @@ const refresh = asyncHandler(async (req, res) => {
     asyncHandler(async (err, decoded) => {
       if (err) return res.status(403).json({ message: "Forbiden Access" });
 
-      const foundUser = await User.findOne({ email: decoded.email }).exec();
+      const foundUser = await User.findById(decoded._id).exec();
 
       if (!foundUser) return res.status(401).json({ message: "Unauthorized" });
 
       const accessToken = jwt.sign(
         {
           UserInfo: {
+            _id: foundUser._id,
             email: foundUser.email,
             username: foundUser.username,
             role: foundUser.role,
           },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1m" }
+        { expiresIn: "30m" }
       );
 
       res.json({ accessToken });
@@ -98,7 +156,8 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  register,
   login,
-  logout,
   refresh,
+  logout,
 };

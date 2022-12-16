@@ -1,6 +1,7 @@
 const express = require("express");
 const { check } = require("express-validator");
 const universityController = require("../controllers/universityController");
+const verifyAuth = require("../middleware/verifyAuth");
 
 const router = express.Router();
 const checkFields = [
@@ -17,6 +18,7 @@ router
   .route("/")
   .get(universityController.getAllUniversities)
   .post(
+    verifyAuth,
     [...checkFields, check("countryId").isMongoId()],
     universityController.createNewUniversity
   )

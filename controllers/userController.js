@@ -81,6 +81,8 @@ const createNewUser = asyncHandler(async (req, res, next) => {
     password: hashedPassword,
     role,
     image,
+    assignedStudents: [],
+    tasks: [],
   };
 
   const newUser = await User.create(userObject);
