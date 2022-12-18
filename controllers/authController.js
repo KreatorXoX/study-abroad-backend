@@ -36,8 +36,8 @@ const register = asyncHandler(async (req, res) => {
     {
       UserInfo: {
         _id: newUser._id,
-        email: newUser.email,
         username: newUser.username,
+        email: newUser.email,
         role: newUser.role,
       },
     },
@@ -83,8 +83,8 @@ const login = asyncHandler(async (req, res) => {
     {
       UserInfo: {
         _id: foundUser._id,
-        email: foundUser.email,
         username: foundUser.username,
+        email: foundUser.email,
         role: foundUser.role,
       },
     },
@@ -129,8 +129,8 @@ const refresh = asyncHandler(async (req, res) => {
         {
           UserInfo: {
             _id: foundUser._id,
-            email: foundUser.email,
             username: foundUser.username,
+            email: foundUser.email,
             role: foundUser.role,
           },
         },
