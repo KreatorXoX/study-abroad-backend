@@ -22,7 +22,9 @@ router
   .patch(
     [
       check("id").isMongoId(),
+      check("username").not().isEmpty(),
       check("email").isEmail(),
+      check("password").not().isEmpty(),
       check("active").isBoolean(),
     ],
     userController.updateUser

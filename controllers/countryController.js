@@ -32,21 +32,23 @@ const getCountryById = asyncHandler(async (req, res, next) => {
 });
 
 const createNewCountry = asyncHandler(async (req, res, next) => {
-  console.log(req.file);
-  console.log(req.body);
-  return res.json({ message: "no luck" });
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
-  const { name, flag, videoUrl } = req.body;
+  const { name, videoUrl } = req.body;
+
+  const imageObj = {
+    url: req.file.path,
+    filename: req.file.filename,
+  };
 
   const duplicateCountry = await Country.findOne({ name }).lean().exec();
   if (duplicateCountry) {
     return res.status(400).json({ message: "Duplicated Country" });
   }
 
-  const countryObject = { name, flag, videoUrl };
+  const countryObject = { name, flag: imageObj, videoUrl };
   const newCountry = await Country.create(countryObject);
 
   if (newCountry) {

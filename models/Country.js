@@ -10,8 +10,8 @@ const countrySchema = new Schema({
     required: true,
   },
   flag: {
-    type: String,
-    required: true,
+    url: String,
+    filename: String,
   },
   videoUrl: {
     type: String,

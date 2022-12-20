@@ -35,8 +35,20 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
-  const { name, logo, generalInfo, motto, videoUrl, infoBoxes, countryId } =
-    req.body;
+  const {
+    name,
+    logo,
+    generalInfo,
+    motto,
+    videoUrl,
+    infoBox1Header,
+    infoBox1Content,
+    infoBox2Header,
+    infoBox2Content,
+    infoBox3Header,
+    infoBox3Content,
+    countryId,
+  } = req.body;
 
   const country = await Country.findById(countryId).exec();
 
@@ -56,7 +68,20 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
     generalInfo,
     motto,
     videoUrl,
-    infoBoxes,
+    infoBoxes: {
+      box1: {
+        header: infoBox1Header,
+        content: infoBox1Content,
+      },
+      box2: {
+        header: infoBox2Header,
+        content: infoBox2Content,
+      },
+      box3: {
+        header: infoBox3Header,
+        content: infoBox3Content,
+      },
+    },
     country: countryId,
   };
 
@@ -85,8 +110,20 @@ const updateUniversity = asyncHandler(async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
   }
-  const { universityId, name, logo, generalInfo, motto, videoUrl, infoBoxes } =
-    req.body;
+  const {
+    name,
+    logo,
+    generalInfo,
+    motto,
+    videoUrl,
+    infoBox1Header,
+    infoBox1Content,
+    infoBox2Header,
+    infoBox2Content,
+    infoBox3Header,
+    infoBox3Content,
+    countryId,
+  } = req.body;
 
   const university = await University.findById(universityId).exec();
 
@@ -95,15 +132,30 @@ const updateUniversity = asyncHandler(async (req, res, next) => {
   }
 
   university.name = name;
+  university.country = countryId;
   university.logo = logo;
   university.generalInfo = generalInfo;
   university.motto = motto;
   university.videoUrl = videoUrl;
-  university.infoBoxes = infoBoxes;
+  university.infoBoxes = {
+    box1: {
+      header: infoBox1Header,
+      content: infoBox1Content,
+    },
+    box2: {
+      header: infoBox2Header,
+      content: infoBox2Content,
+    },
+    box3: {
+      header: infoBox3Header,
+      content: infoBox3Content,
+    },
+  };
   await university.save();
 
   res.json({ message: "University updated " });
 });
+
 const deleteUniversity = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
