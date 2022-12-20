@@ -1,100 +1,101 @@
-const mongoose = require("mongoose");
-const Application = require("./Application");
-const Task = require("./Task");
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+const Application = require('./Application')
+const Task = require('./Task')
+const Schema = mongoose.Schema
 
 const userSchema = new Schema({
   username: {
     type: String,
-    required: true,
+    required: true
   },
   email: {
     type: String,
-    required: true,
+    required: true
   },
   password: {
     type: String,
-    required: true,
+    required: true
   },
   image: {
-    type: String,
+    url: String,
+    filename: String
   },
   role: {
     type: String,
-    enum: ["employee", "admin", "user"],
-    default: "user",
+    enum: ['employee', 'admin', 'user'],
+    default: 'user'
   },
   active: {
     type: Boolean,
-    default: true,
+    default: true
   },
   assignedStudents: {
     type: [Schema.Types.ObjectId],
     default: () => {
-      return undefined;
+      return undefined
     },
-    ref: "User",
+    ref: 'User'
   },
   assignedConsultants: {
     type: [Schema.Types.ObjectId],
     default: () => {
-      return undefined;
+      return undefined
     },
-    ref: "User",
+    ref: 'User'
   },
   tasks: {
     type: [Schema.Types.ObjectId],
     default: () => {
-      return undefined;
+      return undefined
     },
-    ref: "Task",
+    ref: 'Task'
   },
   applications: {
     type: [Schema.Types.ObjectId],
     default: () => {
-      return undefined;
+      return undefined
     },
-    ref: "Application",
-  },
-});
+    ref: 'Application'
+  }
+})
 
-userSchema.post("findOneAndRemove", async function (user) {
+userSchema.post('findOneAndRemove', async function(user) {
   if (user) {
-    if (user.role === "employee") {
-      const populatedUser = await user.populate("assignedStudents");
-      const students = populatedUser.assignedStudents;
+    if (user.role === 'employee') {
+      const populatedUser = await user.populate('assignedStudents')
+      const students = populatedUser.assignedStudents
 
       if (students && students.length > 0) {
         for (let student of students) {
-          student.assignedConsultants.pull(user._id);
-          await student.save();
+          student.assignedConsultants.pull(user._id)
+          await student.save()
         }
       }
 
       if (user.tasks) {
         for (let taskId of user.tasks) {
-          await Task.findByIdAndRemove(taskId);
+          await Task.findByIdAndRemove(taskId)
         }
       }
-    } else if (user.role === "user") {
-      const populatedUser = await user.populate("assignedConsultants");
-      const consults = populatedUser.assignedConsultants;
+    } else if (user.role === 'user') {
+      const populatedUser = await user.populate('assignedConsultants')
+      const consults = populatedUser.assignedConsultants
 
       if (consults && consults.length > 0) {
         for (let consult of consults) {
-          consult.assignedStudents.pull(user._id);
-          await consult.save();
+          consult.assignedStudents.pull(user._id)
+          await consult.save()
         }
       }
       if (user.tasks) {
         for (let taskId of user.tasks) {
-          await Task.findByIdAndRemove(taskId);
+          await Task.findByIdAndRemove(taskId)
         }
       }
 
-      await Application.deleteMany({ _id: { $in: user.applications } });
+      await Application.deleteMany({ _id: { $in: user.applications } })
     }
   }
-});
+})
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema)

@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+const Schema = mongoose.Schema
 
 const taskSchema = new Schema(
   {
@@ -7,43 +7,42 @@ const taskSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         required: true,
-        ref: "User",
-      },
+        ref: 'User'
+      }
     ],
     title: {
       type: String,
-      required: true,
+      required: true
     },
     description: {
       type: String,
-      required: false,
+      required: false
     },
     completed: {
       byStudent: {
         type: Boolean,
-        default: false,
+        default: false
       },
       byEmployee: {
         type: Boolean,
-        default: false,
-      },
-    },
+        default: false
+      }
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
-);
+)
 
-taskSchema.post("findOneAndRemove", async function (task) {
+taskSchema.post('findOneAndRemove', async function(task) {
   if (task) {
-    console.log("post delete task");
-    const populatedTask = await task.populate("users");
-    const users = populatedTask.users;
+    const populatedTask = await task.populate('users')
+    const users = populatedTask.users
 
     for (let user of users) {
-      user.tasks.pull(task._id);
-      await user.save();
+      user.tasks.pull(task._id)
+      await user.save()
     }
   }
-});
-module.exports = mongoose.model("Task", taskSchema);
+})
+module.exports = mongoose.model('Task', taskSchema)
