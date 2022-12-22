@@ -24,7 +24,7 @@ const getTasksByStudent = asyncHandler(async (req, res, next) => {
     .lean()
     .exec();
 
-  if (!tasks?.length) {
+  if (!tasks) {
     return res
       .status(400)
       .json({ message: "No tasks found by the given student-id" });

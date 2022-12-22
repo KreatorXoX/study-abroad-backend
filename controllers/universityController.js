@@ -1,41 +1,39 @@
-const mongoose = require('mongoose')
-const asyncHandler = require('express-async-handler')
-const { validationResult } = require('express-validator')
-const Country = require('../models/Country')
-const University = require('../models/University')
+const mongoose = require("mongoose");
+const asyncHandler = require("express-async-handler");
+const { validationResult } = require("express-validator");
+const Country = require("../models/Country");
+const University = require("../models/University");
 
 const getAllUniversities = asyncHandler(async (req, res, next) => {
-  const universities = await University.find().lean()
+  const universities = await University.find().lean();
 
   if (!universities?.length) {
-    return res.status(400).json({ message: 'No university found' })
+    return res.status(400).json({ message: "No university found" });
   }
 
-  res.json(universities)
-})
+  res.json(universities);
+});
 
 const getUniversityById = asyncHandler(async (req, res, next) => {
-  const errors = validationResult(req)
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: 'Id is required', ...errors })
+    return res.status(400).json({ message: "Id is required", ...errors });
   }
-  const { id } = req.params
+  const { id } = req.params;
 
-  const university = await University.findById(id)
-    .lean()
-    .exec()
+  const university = await University.findById(id).lean().exec();
 
   if (!university) {
-    return res.status(404).json({ message: 'University not found' })
+    return res.status(404).json({ message: "University not found" });
   }
 
-  res.json(university)
-})
+  res.json(university);
+});
 
 const createNewUniversity = asyncHandler(async (req, res, next) => {
-  const errors = validationResult(req)
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: 'Fields are required', ...errors })
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
   const {
     name,
@@ -48,24 +46,22 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
     infoBox2Content,
     infoBox3Header,
     infoBox3Content,
-    countryId
-  } = req.body
+    countryId,
+  } = req.body;
 
-  const country = await Country.findById(countryId).exec()
+  const country = await Country.findById(countryId).exec();
 
   if (!country) {
-    return res.status(404).json({ message: 'Country not found' })
+    return res.status(404).json({ message: "Country not found" });
   }
 
-  const duplicateUniversity = await University.findOne({ name })
-    .lean()
-    .exec()
+  const duplicateUniversity = await University.findOne({ name }).lean().exec();
 
   if (duplicateUniversity) {
-    return res.status(409).json({ message: 'Duplicate University' })
+    return res.status(409).json({ message: "Duplicate University" });
   }
 
-  const universityImage = { url: req.file.path, filename: req.file.filename }
+  const universityImage = { url: req.file.path, filename: req.file.filename };
 
   const universityObject = {
     name,
@@ -76,44 +72,44 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
     infoBoxes: {
       box1: {
         header: infoBox1Header,
-        content: infoBox1Content
+        content: infoBox1Content,
       },
       box2: {
         header: infoBox2Header,
-        content: infoBox2Content
+        content: infoBox2Content,
       },
       box3: {
         header: infoBox3Header,
-        content: infoBox3Content
-      }
+        content: infoBox3Content,
+      },
     },
-    country: countryId
-  }
+    country: countryId,
+  };
 
-  const updateSession = await mongoose.startSession()
-  updateSession.startTransaction()
+  const updateSession = await mongoose.startSession();
+  updateSession.startTransaction();
 
   const newUniversity = await University.create([universityObject], {
-    session: updateSession
-  })
+    session: updateSession,
+  });
 
-  country.universities.push(newUniversity[0]._id)
+  country.universities.push(newUniversity[0]._id);
 
-  await country.save({ session: updateSession })
-  await updateSession.commitTransaction()
+  await country.save({ session: updateSession });
+  await updateSession.commitTransaction();
 
   if (newUniversity) {
-    res.status(201).json({ message: 'University created successfully' })
+    res.status(201).json({ message: "University created successfully" });
   } else {
     res.status(400).json({
-      message: 'Failed to create university'
-    })
+      message: "Failed to create university",
+    });
   }
-})
+});
 const updateUniversity = asyncHandler(async (req, res, next) => {
-  const errors = validationResult(req)
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: 'Fields are required', ...errors })
+    return res.status(400).json({ message: "Fields are required", ...errors });
   }
   const {
     name,
@@ -126,68 +122,81 @@ const updateUniversity = asyncHandler(async (req, res, next) => {
     infoBox2Content,
     infoBox3Header,
     infoBox3Content,
-    countryId
-  } = req.body
+    countryId,
+    universityId,
+  } = req.body;
 
-  const university = await University.findById(universityId).exec()
+  const university = await University.findById(universityId).exec();
 
   if (!university) {
-    return res.status(400).json({ message: 'university not found' })
+    return res.status(400).json({ message: "university not found" });
   }
 
-  university.name = name
-  university.country = countryId
-  university.generalInfo = generalInfo
-  university.motto = motto
-  university.videoUrl = videoUrl
+  university.name = name ? name : university.name;
+  university.country = countryId ? countryId : university.country;
+  university.generalInfo = generalInfo ? generalInfo : university.generalInfo;
+  university.motto = motto ? motto : university.motto;
+  university.videoUrl = videoUrl ? videoUrl : university.videoUrl;
   university.infoBoxes = {
     box1: {
-      header: infoBox1Header,
+      header: infoBox1Header
+        ? infoBox1Header
+        : university.infoBoxes.box1.header,
       content: infoBox1Content
+        ? infoBox1Content
+        : university.infoBoxes.box1.content,
     },
     box2: {
-      header: infoBox2Header,
+      header: infoBox2Header
+        ? infoBox2Header
+        : university.infoBoxes.box2.header,
       content: infoBox2Content
+        ? infoBox2Content
+        : university.infoBoxes.box2.content,
     },
     box3: {
-      header: infoBox3Header,
+      header: infoBox3Header
+        ? infoBox3Header
+        : university.infoBoxes.box3.header,
       content: infoBox3Content
-    }
-  }
+        ? infoBox3Content
+        : university.infoBoxes.box3.content,
+    },
+  };
 
   if (req.file) {
-    const universityImage = { url: req.file.path, filename: req.file.filename }
-    university.logo = universityImage
+    const universityImage = { url: req.file.path, filename: req.file.filename };
+    university.logo = universityImage;
   }
 
-  await university.save()
+  await university.save();
 
-  res.json({ message: 'University updated ' })
-})
+  res.json({ message: "University updated", id: university._id });
+});
 
 const deleteUniversity = asyncHandler(async (req, res, next) => {
-  const errors = validationResult(req)
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: 'Id is required', ...errors })
+    return res.status(400).json({ message: "Id is required", ...errors });
   }
 
-  const { id } = req.body
+  const { id } = req.body;
 
-  const result = await University.findByIdAndRemove(id).exec()
+  const result = await University.findByIdAndRemove(id).exec();
 
   if (!result) {
-    return res.status(400).json({ message: 'University not found' })
+    return res.status(400).json({ message: "University not found" });
   }
 
-  const response = `University : ${result.name} deleted successfully`
+  const response = `University : ${result.name} deleted successfully`;
 
-  res.json({ message: response })
-})
+  res.json({ message: response });
+});
 
 module.exports = {
   getAllUniversities,
   createNewUniversity,
   getUniversityById,
   updateUniversity,
-  deleteUniversity
-}
+  deleteUniversity,
+};

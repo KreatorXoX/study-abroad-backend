@@ -1,12 +1,14 @@
 const express = require("express");
 const { check } = require("express-validator");
 const router = express.Router();
+const upload = require("../config/multerOptions");
 const authController = require("../controllers/authController");
 const loginLimiter = require("../middleware/loginLimiter");
 
 router
   .route("/register")
   .post(
+    upload.single("image"),
     [
       check("email").isEmail(),
       check("username").not().isEmpty(),
