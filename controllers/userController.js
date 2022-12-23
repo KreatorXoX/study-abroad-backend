@@ -71,7 +71,7 @@ const createNewUser = asyncHandler(async (req, res, next) => {
   const duplicateUser = await User.findOne({ email }).lean().exec(); // documentation says if you pass params you should add exec for returning promises
 
   if (duplicateUser) {
-    return res.status(409).json({ message: "Duplicate User" });
+    return next(res.status(409).json({ message: "Duplicate User" }));
   }
 
   let userImage = undefined;
@@ -120,7 +120,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
 
   // if the user tries to update their email to an existing email
   if (duplicateUser && duplicateUser._id.toString() !== id) {
-    return res.status(409).json({ message: "Email already in use" });
+    return next(new Error("Duplicate Lol"));
   }
 
   user.username = username;
