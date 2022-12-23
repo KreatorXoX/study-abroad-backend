@@ -4,8 +4,9 @@ const { validationResult } = require("express-validator");
 const Country = require("../models/Country");
 const University = require("../models/University");
 const { cloudinary } = require("../config/cloudinaryOptions");
+const HttpError = require("../models/http-error");
 
-const getAllUniversities = asyncHandler(async (req, res, next) => {
+const getAllUniversities = asyncHandler(async (req, res) => {
   const universities = await University.find().lean();
 
   if (!universities?.length) {
@@ -15,7 +16,7 @@ const getAllUniversities = asyncHandler(async (req, res, next) => {
   res.json(universities);
 });
 
-const getUniversityById = asyncHandler(async (req, res, next) => {
+const getUniversityById = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Id is required", ...errors });
@@ -34,7 +35,7 @@ const getUniversityById = asyncHandler(async (req, res, next) => {
 const createNewUniversity = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 400));
   }
   const {
     name,
@@ -53,13 +54,13 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
   const country = await Country.findById(countryId).exec();
 
   if (!country) {
-    return res.status(404).json({ message: "Country not found" });
+    return next(new HttpError("Country Does not Exist!", 404));
   }
 
   const duplicateUniversity = await University.findOne({ name }).lean().exec();
 
   if (duplicateUniversity) {
-    return res.status(409).json({ message: "Duplicate University" });
+    return next(new HttpError("Duplicate University", 409));
   }
 
   const universityImage = { url: req.file.path, filename: req.file.filename };
@@ -102,16 +103,14 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
   if (newUniversity) {
     res.status(201).json({ message: "University created successfully" });
   } else {
-    res.status(400).json({
-      message: "Failed to create university",
-    });
+    return next(new HttpError("Failed to Create University", 500));
   }
 });
 
-const updateUniversity = asyncHandler(async (req, res, next) => {
+const updateUniversity = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 400));
   }
   const {
     name,
@@ -131,7 +130,7 @@ const updateUniversity = asyncHandler(async (req, res, next) => {
   const university = await University.findById(universityId).exec();
 
   if (!university) {
-    return res.status(400).json({ message: "university not found" });
+    return next(new HttpError("University Does not Exist!", 404));
   }
 
   university.name = name ? name : university.name;

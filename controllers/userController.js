@@ -3,11 +3,12 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 const { cloudinary } = require("../config/cloudinaryOptions");
+const HttpError = require("../models/http-error");
 
 const User = require("../models/User");
 const Task = require("../models/Task");
 
-const getAllUsers = asyncHandler(async (req, res, next) => {
+const getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select("-password").lean();
 
   if (!users?.length) {
@@ -16,7 +17,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 
   res.json(users);
 });
-const getUserById = asyncHandler(async (req, res, next) => {
+const getUserById = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Id is required", ...errors });
@@ -42,7 +43,7 @@ const getUserById = asyncHandler(async (req, res, next) => {
 
   res.json(user);
 });
-const getUsersByRole = asyncHandler(async (req, res, next) => {
+const getUsersByRole = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Invalid Role", ...errors });
@@ -65,13 +66,13 @@ const getUsersByRole = asyncHandler(async (req, res, next) => {
 const createNewUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 400));
   }
   const { username, email, password, role } = req.body;
   const duplicateUser = await User.findOne({ email }).lean().exec(); // documentation says if you pass params you should add exec for returning promises
 
   if (duplicateUser) {
-    return next(res.status(409).json({ message: "Duplicate User" }));
+    return next(new HttpError("Duplicate User !", 409));
   }
 
   let userImage = undefined;
@@ -96,16 +97,14 @@ const createNewUser = asyncHandler(async (req, res, next) => {
   if (newUser) {
     res.status(201).json({ message: `User ${username} created successfully` });
   } else {
-    res.status(400).json({
-      message: "Failed to create user due to invalid data",
-    });
+    return next(new HttpError("Failed to Create User", 500));
   }
 });
 
 const updateUser = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 409));
   }
 
   const { id, email, active, password, username } = req.body;
@@ -113,14 +112,14 @@ const updateUser = asyncHandler(async (req, res, next) => {
   const user = await User.findById(id).exec();
 
   if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    return next(new HttpError("User Does not Exist!", 404));
   }
 
   const duplicateUser = await User.findOne({ email }).lean().exec();
 
   // if the user tries to update their email to an existing email
   if (duplicateUser && duplicateUser._id.toString() !== id) {
-    return next(new Error("Duplicate Lol"));
+    return next(new HttpError("Duplicate User !", 409));
   }
 
   user.username = username;
@@ -143,7 +142,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
   res.json({ message: `${user.username} is updated`, id: user._id });
 });
 
-const deleteUser = asyncHandler(async (req, res, next) => {
+const deleteUser = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
@@ -169,7 +168,8 @@ const deleteUser = asyncHandler(async (req, res, next) => {
 
   res.json({ message, role: role, id: id });
 });
-const assignUsers = asyncHandler(async (req, res, next) => {
+
+const assignUsers = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
@@ -207,7 +207,8 @@ const assignUsers = asyncHandler(async (req, res, next) => {
 
   res.json({ message: "Successful assignment", stdId: stdId });
 });
-const deAssignUsers = asyncHandler(async (req, res, next) => {
+
+const deAssignUsers = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });

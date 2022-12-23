@@ -2,8 +2,9 @@ const Country = require("../models/Country");
 const asyncHandler = require("express-async-handler");
 const { validationResult } = require("express-validator");
 const { cloudinary } = require("../config/cloudinaryOptions");
+const HttpError = require("../models/http-error");
 
-const getAllCountries = asyncHandler(async (req, res, next) => {
+const getAllCountries = asyncHandler(async (req, res) => {
   const countries = await Country.find().lean();
 
   if (!countries?.length) {
@@ -13,7 +14,7 @@ const getAllCountries = asyncHandler(async (req, res, next) => {
   res.json(countries);
 });
 
-const getCountryById = asyncHandler(async (req, res, next) => {
+const getCountryById = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
@@ -35,7 +36,7 @@ const getCountryById = asyncHandler(async (req, res, next) => {
 const createNewCountry = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 400));
   }
   const { name, videoUrl } = req.body;
 
@@ -46,7 +47,7 @@ const createNewCountry = asyncHandler(async (req, res, next) => {
 
   const duplicateCountry = await Country.findOne({ name }).lean().exec();
   if (duplicateCountry) {
-    return res.status(400).json({ message: "Duplicated Country" });
+    return next(new HttpError("Duplicate Country !", 409));
   }
 
   const countryObject = { name, flag: imageObj, videoUrl };
@@ -55,23 +56,21 @@ const createNewCountry = asyncHandler(async (req, res, next) => {
   if (newCountry) {
     res.status(201).json({ message: "Country created successfully" });
   } else {
-    res.status(400).json({
-      message: "Failed to create country",
-    });
+    return next(new HttpError("Failed to Create Country", 500));
   }
 });
 
 const updateCountry = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ message: "Fields are required", ...errors });
+    return next(new HttpError("Validation Error", 400));
   }
   const { cid, name, videoUrl } = req.body;
 
   const country = await Country.findById(cid).exec();
 
   if (!country) {
-    return res.status(400).json({ message: "Country not found" });
+    return next(new HttpError("Country Does not Exist!", 404));
   }
 
   country.name = name ? name : country.name;

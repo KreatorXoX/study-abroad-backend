@@ -14,9 +14,8 @@ const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
-  const status = res.statusCode ? res.statusCode : 500; // server err
-
-  res.status(status).json({ message: err.message });
+  res.status(err.code || 500);
+  res.json({ message: err.message || "An unknown error occurred!" });
 };
 
 module.exports = errorHandler;
