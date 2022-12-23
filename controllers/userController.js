@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
+const { cloudinary } = require("../config/cloudinaryOptions");
 
 const User = require("../models/User");
 const Task = require("../models/Task");
@@ -62,7 +63,6 @@ const getUsersByRole = asyncHandler(async (req, res, next) => {
   res.json(users);
 });
 const createNewUser = asyncHandler(async (req, res, next) => {
-  console.log(req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ message: "Fields are required", ...errors });
@@ -129,6 +129,9 @@ const updateUser = asyncHandler(async (req, res, next) => {
 
   if (req.file) {
     const userImage = { url: req.file.path, filename: req.file.filename };
+    if (user.image?.filename) {
+      cloudinary.uploader.destroy(user.image.filename);
+    }
     user.image = userImage;
   }
   if (password) {
@@ -159,9 +162,12 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   if (!result) {
     return res.status(400).json({ message: "User not found" });
   }
-  const response = `Username:${result.username} with ID:${result._id} deleted successfully`;
 
-  res.json({ response, role: role, id: id });
+  cloudinary.uploader.destroy(result.image?.filename);
+
+  const message = `User:${result.username} deleted successfully`;
+
+  res.json({ message, role: role, id: id });
 });
 const assignUsers = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);

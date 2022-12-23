@@ -1,6 +1,7 @@
 const Country = require("../models/Country");
 const asyncHandler = require("express-async-handler");
 const { validationResult } = require("express-validator");
+const { cloudinary } = require("../config/cloudinaryOptions");
 
 const getAllCountries = asyncHandler(async (req, res, next) => {
   const countries = await Country.find().lean();
@@ -77,7 +78,11 @@ const updateCountry = asyncHandler(async (req, res, next) => {
   country.videoUrl = videoUrl ? videoUrl : country.videoUrl;
 
   if (req.file) {
-    country.flag = { url: req.file.path, filename: req.file.filename };
+    const flagImage = { url: req.file.path, filename: req.file.filename };
+    if (country.flag?.filename) {
+      cloudinary.uploader.destroy(country.flag.filename);
+    }
+    country.flag = flagImage;
   }
   await country.save();
   res.json({ message: "Country updated", id: country._id });
@@ -96,9 +101,13 @@ const deleteCountry = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "Country not found" });
   }
 
-  const response = `Country : ${result.name} deleted successfully`;
+  if (result.flag?.filename) {
+    cloudinary.uploader.destroy(result.flag.filename);
+  }
 
-  res.json({ message: response });
+  const message = `Country : ${result.name} deleted successfully`;
+
+  res.json({ message });
 });
 
 module.exports = {

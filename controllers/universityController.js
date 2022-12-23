@@ -3,6 +3,7 @@ const asyncHandler = require("express-async-handler");
 const { validationResult } = require("express-validator");
 const Country = require("../models/Country");
 const University = require("../models/University");
+const { cloudinary } = require("../config/cloudinaryOptions");
 
 const getAllUniversities = asyncHandler(async (req, res, next) => {
   const universities = await University.find().lean();
@@ -106,6 +107,7 @@ const createNewUniversity = asyncHandler(async (req, res, next) => {
     });
   }
 });
+
 const updateUniversity = asyncHandler(async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -166,6 +168,9 @@ const updateUniversity = asyncHandler(async (req, res, next) => {
 
   if (req.file) {
     const universityImage = { url: req.file.path, filename: req.file.filename };
+    if (university.logo?.filename) {
+      cloudinary.uploader.destroy(university.logo.filename);
+    }
     university.logo = universityImage;
   }
 
@@ -188,9 +193,13 @@ const deleteUniversity = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: "University not found" });
   }
 
-  const response = `University : ${result.name} deleted successfully`;
+  if (result.logo?.filename) {
+    cloudinary.uploader.destroy(result.logo.filename);
+  }
 
-  res.json({ message: response });
+  const message = `University : ${result.name} deleted successfully`;
+
+  res.json({ message });
 });
 
 module.exports = {
