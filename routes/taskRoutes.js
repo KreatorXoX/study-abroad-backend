@@ -3,12 +3,15 @@ const { check } = require("express-validator");
 const taskController = require("../controllers/taskController");
 const router = express.Router();
 const verifyAuth = require("../middleware/verifyAuth");
+const verifyAdmin = require("../middleware/verifyAdmin");
 
 router.use(verifyAuth);
+
 router
   .route("/")
   .get(taskController.getAllTasks)
   .post(
+    verifyAdmin,
     [
       check("empId").isMongoId(),
       check("stdId").isMongoId(),
@@ -16,8 +19,8 @@ router
     ],
     taskController.createNewTask
   )
-  .patch([check("taskId").isMongoId()], taskController.updateTask)
-  .delete([check("id").isMongoId()], taskController.deleteTask);
+  .patch(verifyAdmin, [check("taskId").isMongoId()], taskController.updateTask)
+  .delete(verifyAdmin, [check("id").isMongoId()], taskController.deleteTask);
 
 router
   .route("/:stdId")

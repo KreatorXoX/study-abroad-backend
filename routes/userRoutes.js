@@ -4,6 +4,7 @@ const { check } = require("express-validator");
 const upload = require("../config/multerOptions");
 const router = express.Router();
 const verifyAuth = require("../middleware/verifyAuth");
+const verifyAdmin = require("../middleware/verifyAdmin");
 
 router.use(verifyAuth);
 
@@ -11,6 +12,7 @@ router
   .route("/")
   .get(userController.getAllUsers)
   .post(
+    verifyAdmin,
     upload.single("image"),
     [
       check("username").isString().isLength({ min: 3 }),
@@ -22,6 +24,7 @@ router
     userController.createNewUser
   )
   .patch(
+    verifyAdmin,
     upload.single("image"),
     [
       check("id").isMongoId(),
@@ -31,7 +34,7 @@ router
     ],
     userController.updateUser
   )
-  .delete(userController.deleteUser);
+  .delete(verifyAdmin, userController.deleteUser);
 router
   .route("/role/:role")
   .get(
@@ -41,13 +44,15 @@ router
 router
   .route("/assign")
   .patch(
-    [check("stdId").isMongoId(), check("consultIds.*").isMongoId()],
+    verifyAdmin,
+    [(check("stdId").isMongoId(), check("consultIds.*").isMongoId())],
     userController.assignUsers
   );
 router
   .route("/deassign")
   .patch(
-    [check("stdId").isMongoId(), check("consultId").isMongoId()],
+    verifyAdmin,
+    [(check("stdId").isMongoId(), check("consultId").isMongoId())],
     userController.deAssignUsers
   );
 router.route("/:id").get([check("id").isMongoId()], userController.getUserById);

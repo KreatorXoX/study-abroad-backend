@@ -1,7 +1,7 @@
 const express = require("express");
 const { check } = require("express-validator");
 const countryController = require("../controllers/countryController");
-const verifyAuth = require("../middleware/verifyAuth");
+const verifyAdmin = require("../middleware/verifyAdmin");
 const upload = require("../config/multerOptions");
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router
   .route("/")
   .get(countryController.getAllCountries)
   .post(
-    verifyAuth,
+    verifyAdmin,
     upload.single("flag"),
     [
       check("name").isString().not().isEmpty(),
@@ -27,7 +27,7 @@ router
     countryController.createNewCountry
   )
   .patch(
-    verifyAuth,
+    verifyAdmin,
     upload.single("flag"),
     [
       check("cid").isMongoId(),
@@ -37,7 +37,7 @@ router
     countryController.updateCountry
   )
   .delete(
-    verifyAuth,
+    verifyAdmin,
     [check("id").isMongoId()],
     countryController.deleteCountry
   );

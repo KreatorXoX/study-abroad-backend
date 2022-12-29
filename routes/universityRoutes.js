@@ -2,7 +2,7 @@ const express = require("express");
 const { check } = require("express-validator");
 const upload = require("../config/multerOptions");
 const universityController = require("../controllers/universityController");
-const verifyAuth = require("../middleware/verifyAuth");
+const verifyAdmin = require("../middleware/verifyAdmin");
 
 const mimeTypes = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -24,7 +24,7 @@ router
   .route("/")
   .get(universityController.getAllUniversities)
   .post(
-    verifyAuth,
+    verifyAdmin,
     upload.single("logo"),
     [
       ...checkFields,
@@ -39,12 +39,12 @@ router
     universityController.createNewUniversity
   )
   .patch(
-    verifyAuth,
+    verifyAdmin,
     upload.single("logo"),
     [check("universityId").isMongoId()],
     universityController.updateUniversity
   )
-  .delete(verifyAuth, universityController.deleteUniversity);
+  .delete(verifyAdmin, universityController.deleteUniversity);
 router
   .route("/:id")
   .get([check("id").isMongoId()], universityController.getUniversityById);
