@@ -10,6 +10,7 @@ router.use(verifyAuth);
 router
   .route("/")
   .get(taskController.getAllTasks)
+  .patch([check("taskId").isMongoId()], taskController.updateTask)
   .post(
     verifyAdmin,
     [
@@ -19,7 +20,6 @@ router
     ],
     taskController.createNewTask
   )
-  .patch(verifyAdmin, [check("taskId").isMongoId()], taskController.updateTask)
   .delete(verifyAdmin, [check("id").isMongoId()], taskController.deleteTask);
 
 router
