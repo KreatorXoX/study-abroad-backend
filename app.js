@@ -17,9 +17,9 @@ connectDB();
 const app = express();
 
 // middlewares
-app.use(logger);
-
 app.use(cors(corsOpts));
+
+app.use(logger);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

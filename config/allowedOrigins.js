@@ -1,2 +1,6 @@
-const allowedOrigins = ["http://127.0.0.1:5173/"];
+const allowedOrigins = [
+  "http://study-abroad-frontend.vercel.app",
+  "http://study-abroad-frontend-git-main-kreatorxox.vercel.app",
+  "http://study-abroad-frontend-94h0evcfi-kreatorxox.vercel.app",
+];
 module.exports = allowedOrigins;
